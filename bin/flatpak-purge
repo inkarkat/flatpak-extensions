@@ -1,0 +1,30 @@
+#!/bin/bash
+# Source: https://askubuntu.com/a/1408121/72217
+
+: ${SUDO:=sudo}; [ $EUID -eq 0 ] && SUDO=''
+
+printUsage()
+{
+    cat <<HELPTEXT
+Remove unused runtime packages and objects.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-?|-h|--help]'
+}
+
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+    --root-execute)	shift
+			set -e
+			flatpak repair
+			flatpak uninstall --unused
+			exit $?
+			;;
+esac
+if [ $# -ne 0 ]; then
+    printUsage "$0" >&2
+    exit 2
+fi
+
+exec withDiskUsageDelta --for /var/lib/flatpak/repo/objects --include-absolute -- \
+	$SUDO "${BASH_SOURCE[0]}" --root-execute
